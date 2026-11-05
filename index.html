@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>A Little Care Package 🎁</title>
+  <style>
+    :root {
+      --bg: #050505;
+      --hud-text: #6e7681;
+      --hud-bright: #c9d1d9;
+      --pink: #ff758f;
+      --red: #ff4d6d;
+      --gold: #ffd166;
+      --green: #25D366;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--hud-bright);
+      font-family: "Courier New", Courier, "Lucida Console", monospace;
+      height: 100vh;
+      height: 100dvh;
+      width: 100vw;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .top-bar {
+      width: 100%;
+      max-width: 540px;
+      padding: 10px 14px 2px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      z-index: 10;
+    }
+
+    .tab-btn {
+      flex: 1;
+      background: #0d1117;
+      border: 1px solid #21262d;
+      color: #8b949e;
+      padding: 8px 6px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: bold;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn.active {
+      border-color: var(--pink);
+      color: #ffffff;
+      background: rgba(255, 117, 143, 0.14);
+      box-shadow: 0 0 12px rgba(255, 117, 143, 0.25);
+    }
+
+    #canvas-container {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+      cursor: pointer;
+    }
+
+    .hud-wrapper {
+      width: 100%;
+      max-width: 540px;
+      padding: 10px 16px 18px 16px;
+      font-size: 12px;
+      line-height: 1.45;
+      background: linear-gradient(to top, #050505 85%, transparent);
+      z-index: 10;
+    }
+
+    .message-bar {
+      min-height: 32px;
+      margin-bottom: 8px;
+      color: var(--pink);
+      font-size: 13px;
+      font-weight: bold;
+      text-shadow: 0 0 10px rgba(255, 117, 143, 0.45);
+      line-height: 1.35;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 7px;
+      height: 13px;
+      background-color: var(--pink);
+      margin-left: 4px;
+      vertical-align: middle;
+      animation: blink 0.8s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    .choice-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .choice-btn {
+      background: #11161d;
+      border: 1px solid #30363d;
+      color: #e6edf3;
+      padding: 10px;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .choice-btn.cake:hover { border-color: #ff8fab; background: rgba(255, 143, 171, 0.16); }
+    .choice-btn.santa:hover { border-color: #58a6ff; background: rgba(88, 166, 255, 0.16); }
+
+    .choice-sub {
+      font-size: 10px;
+      color: #8b949e;
+      font-weight: normal;
+    }
+
+    .both-btn {
+      width: 100%;
+      background: rgba(255, 209, 102, 0.12);
+      border: 1px dashed var(--gold);
+      color: var(--gold);
+      padding: 9px;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
+
+    .hud-row {
+      display: flex;
+      justify-content: space-between;
+      color: var(--hud-text);
+      font-size: 11px;
+    }
+
+    .hud-highlight { color: #8b949e; }
+    .replay-hint { cursor: pointer; color: #58a6ff; }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <button class="tab-btn active" id="tab-split" onclick="switchMode('split')">✨ Surprise Box</button>
+    <button class="tab-btn" id="tab-cake" onclick="switchMode('cake')">🍰 Tottenham Cake</button>
+    <button class="tab-btn" id="tab-santa" onclick="switchMode('santa')">🎅 Santa Globe</button>
+  </div>
+
+  <div id="canvas-container">
+    <canvas id="asciiCanvas"></canvas>
+  </div>
+
+  <div class="hud-wrapper">
+    <div class="message-bar">
+      <span id="typewriter"></span><span class="cursor"></span>
+    </div>
+
+    <div class="choice-grid">
+      <button class="choice-btn cake" onclick="selectGift('cake')">
+        <span>🍰 Tottenham Cake</span>
+        <span class="choice-sub">Pink icing & sponge</span>
+      </button>
+      <button class="choice-btn santa" onclick="selectGift('santa')">
+        <span>🎅 Santa Snow Globe</span>
+        <span class="choice-sub">Shake for magic snow</span>
+      </button>
+    </div>
+
+    <button class="both-btn" onclick="selectGift('both')">
+      💖 I want BOTH! (Send to WhatsApp)
+    </button>
+
+    <div class="hud-row">
+      <span id="watermark">care_package.py • 2026</span>
+      <span id="replay-btn" class="replay-hint" onclick="resetBox()">↻ re-wrap box</span>
+    </div>
+    <div class="hud-row">
+      <span>
+        status: <span id="status-val" class="hud-highlight">TAP BOX TO UNBOX 🎁</span>
+      </span>
+      <span>running 30 fps</span>
+    </div>
+  </div>
+
+  <script>
+    const CONFIG = {
+      whatsappPhone: "",
+      targetFPS: 30,
+      messages: {
+        locked: "Hey love... someone left a mystery box here for you. Tap the box to open it! ♥",
+        split: "TA-DA! Two little surprises just for you. Tap your favorite or select both below! 🥰",
+        cake: "Greggs Tottenham Cake: Soft golden vanilla sponge topped with bright pink fondant icing! 🍰💖",
+        santa: "Little Santa Snow Globe: Waving hello inside a swirling winter flurry just to make you smile! 🎅❄️"
+      }
+    };
+
+    const canvas = document.getElementById("asciiCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const COLS = 75;
+    const ROWS = 42;
+    let cellW = 7;
+    let cellH = 13;
+    let currentMode = "split";
+    let isBoxOpened = false;
+
+    function resizeCanvas() {
+      const container = document.getElementById("canvas-container");
+      const w = container.clientWidth || window.innerWidth;
+      const h = container.clientHeight || (window.innerHeight - 200);
+
+      const maxW = Math.min(w, 540);
+      cellW = Math.floor(maxW / COLS);
+      cellH = Math.floor(h / ROWS);
+
+      if (cellW * 1.85 > cellH) {
+        cellW = Math.max(4, Math.floor(cellH / 1.85));
+      } else {
+        cellH = Math.max(8, Math.floor(cellW * 1.85));
+      }
+
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = COLS * cellW * dpr;
+      canvas.height = ROWS * cellH * dpr;
+      canvas.style.width = `${COLS * cellW}px`;
+      canvas.style.height = `${ROWS * cellH}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.font = `bold ${cellH - 1}px "Courier New", Courier, monospace`;
+      ctx.textBaseline = "top";
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+
+    function normalize3(v) {
+      const len = Math.hypot(v[0], v[1], v[2]) || 1;
+      return [v[0] / len, v[1] / len, v[2] / len];
+    }
+
+    const sceneNodes = [];
+    const boxNodes = [];
+    const O_MAX = 1.6;
+    const DRAW = [0.15, 4.2];
+
+    function buildBoxGeometry() {
+      boxNodes.length = 0;
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const x = (c - COLS / 2) / (COLS / 2);
+          const y = (1.0 - r / ROWS) - 0.05;
+
+          // Cute 3D Gift Box (Centered, width: 0.55, height: 0.45)
+          if (Math.abs(x) <= 0.32 && y >= -0.25 && y <= 0.20) {
+            const isRibbonVert = Math.abs(x) <= 0.04;
+            const isRibbonHori = Math.abs(y) <= 0.04;
+            const isBow = y > 0.20 && y <= 0.32 && Math.abs(x) <= 0.15;
+            const isTag = x >= 0.12 && x <= 0.30 && y >= -0.15 && y <= 0.02;
+
+            boxNodes.push({
+              gx: c, gy: r, x, y,
+              part: isBow ? "bow" : (isTag ? "tag" : (isRibbonVert || isRibbonHori ? "ribbon" : "box")),
+              order: (y + 0.25) * 1.2,
+              normal: normalize3([x, 0.3, 0.9])
+            });
+          }
+        }
+      }
+    }
+
+    function buildCakeGeometry(centerX, centerY, scale) {
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const x = ((c - COLS / 2) / (COLS / 2) - centerX) / scale;
+          const y = ((1.0 - r / ROWS) - centerY) / scale;
+          const shearX = x - (y - 0.05) * 0.28;
+
+          if (y >= 0.08 && y <= 0.42 && Math.abs(shearX) <= 0.44) {
+            const ripple = 0.08 * Math.sin(shearX * 14) * Math.cos(y * 12);
+            sceneNodes.push({
+              gx: c, gy: r, x, y,
+              part: "cake_icing",
+              order: 0.55 + (y + 0.45) * 0.85,
+              normal: normalize3([ripple, 0.68, 0.72]),
+              edgeChar: Math.abs(shearX) > 0.39 || y > 0.38 || y < 0.12 ? "-" : "@",
+              isCrumb: ((c * 17 + r * 31) % 29 === 0)
+            });
+            continue;
+          }
+
+          const dripWave = 0.05 + 0.025 * Math.sin(x * 16.0);
+          if (y >= dripWave && y < 0.09 && Math.abs(x) <= 0.44) {
+            sceneNodes.push({
+              gx: c, gy: r, x, y,
+              part: "cake_icing_drip",
+              order: 0.48 + (y + 0.45) * 0.85,
+              normal: normalize3([0.0, 0.2, 0.98]),
+              edgeChar: "~"
+            });
+            continue;
+          }
+
+          if (y >= -0.36 && y < 0.06 && Math.abs(x) <= 0.43) {
+            const isAirPocket = ((c * 23 + r * 19) % 13 === 0);
+            sceneNodes.push({
+              gx: c, gy: r, x, y,
+              part: "cake_sponge_front",
+              order: 0.1 + (y + 0.36) * 0.9,
+              normal: normalize3([0.08 * x, -0.1, 0.95]),
+              edgeChar: y < -0.32 || Math.abs(x) > 0.39 ? "_" : (isAirPocket ? "o" : "#"),
+              isAirPocket
+            });
+            continue;
+          }
+
+          const sideX = x - 0.43;
+          const sideY = y - sideX * 0.95;
+          if (sideX > 0 && sideX <= 0.16 && sideY >= -0.36 && sideY <= 0.12) {
+            sceneNodes.push({
+              gx: c, gy: r, x, y,
+              part: "cake_sponge_side",
+              order: 0.2 + (y + 0.36) * 0.9,
+              normal: normalize3([0.85, 0.0, 0.52]),
+              edgeChar: "/"
+            });
+          }
+        }
+      }
+    }
+
+    function buildSantaGeometry(centerX, centerY, scale) {
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const x = ((c - COLS / 2) / (COLS / 2) - centerX) / scale;
+          const y = ((1.0 - r / ROWS) - centerY) / scale;
+
+          if (y >= -0.45 && y <= -0.15) {
+            const baseWidth = 0.31 - (y + 0.45) * 0.08;
+            if (Math.abs(x) <= baseWidth) {
+              const nx = x / baseWidth;
+              const nz = Math.sqrt(Math.max(0.05, 1 - nx * nx));
+              sceneNodes.push({
+                gx: c, gy: r, x, y,
+                part: y >= -0.20 ? "santa_collar" : "santa_base",
+                order: (y + 0.45) * 1.1,
+                normal: normalize3([nx, -0.1, nz]),
+                edgeChar: Math.abs(nx) > 0.82 ? "|" : "="
+              });
+              continue;
+            }
+          }
+
+          const gx = x;
+          const gy = (y - 0.15) * 1.08;
+          const dist = Math.hypot(gx, gy);
+          const R = 0.37;
+
+          if (dist <= R) {
+            const snx = gx / R;
+            const sny = gy / R;
+            const snz = Math.sqrt(Math.max(0.05, 1 - snx * snx - sny * sny));
+
+            if (Math.hypot(gx - 0.06, gy - 0.25) <= 0.048) {
+              sceneNodes.push({ gx: c, gy: r, x, y, part: "santa_beard", order: 0.95, normal: normalize3([snx, sny, 0.9]), edgeChar: "@" });
+              continue;
+            }
+
+            const hatY = gy - 0.14;
+            if (hatY >= 0 && hatY <= 0.13 && Math.abs(gx) <= (0.13 - hatY * 0.75)) {
+              sceneNodes.push({ gx: c, gy: r, x, y, part: "santa_suit", order: 0.88 + gy, normal: normalize3([snx, sny + 0.2, 0.85]), edgeChar: "^" });
+              continue;
+            }
+
+            if (Math.hypot(gx, gy - 0.05) <= 0.115) {
+              const isBeard = gy < 0.045 || Math.abs(gx) > 0.065;
+              sceneNodes.push({ gx: c, gy: r, x, y, part: isBeard ? "santa_beard" : "santa_face", order: 0.78 + gy, normal: normalize3([gx * 4, (gy - 0.05) * 4, 0.9]), edgeChar: isBeard ? "#" : "o" });
+              continue;
+            }
+
+            const inCoat = gy >= -0.22 && gy <= -0.02 && Math.abs(gx) <= 0.165;
+            const inWavingArm = gx >= 0.11 && gx <= 0.24 && gy >= -0.04 && gy <= 0.12;
+            if (inCoat || inWavingArm) {
+              const isBelt = gy >= -0.14 && gy <= -0.09 && !inWavingArm;
+              const isBuckle = isBelt && Math.abs(gx) <= 0.045;
+              sceneNodes.push({ gx: c, gy: r, x, y, part: isBuckle ? "santa_buckle" : (isBelt ? "santa_belt" : "santa_suit"), order: 0.62 + (gy + 0.25), normal: normalize3([gx * 3, gy * 2, 0.88]), edgeChar: isBuckle ? "$" : "8" });
+              continue;
+            }
+
+            if (gy < -0.20) {
+              sceneNodes.push({ gx: c, gy: r, x, y, part: "santa_collar", order: 0.45, normal: normalize3([snx, 0.3, snz]), edgeChar: "." });
+              continue;
+            }
+
+            if (dist >= R * 0.87 || (gx < -0.12 && gy > 0.10 && dist > R * 0.62 && dist < R * 0.74)) {
+              const angle = Math.atan2(gy, gx);
+              sceneNodes.push({ gx: c, gy: r, x, y, part: "santa_glass", order: 0.55 + (gy + R) * 1.1, normal: normalize3([snx, sny, snz]), edgeChar: Math.abs(Math.sin(angle)) > 0.75 ? "-" : "/" });
+            }
+          }
+        }
+      }
+    }
+
+    function rebuildScene() {
+      sceneNodes.length = 0;
+      if (currentMode === "split") {
+        buildCakeGeometry(-0.47, -0.02, 0.45);
+        buildSantaGeometry(0.47, 0.02, 0.52);
+      } else if (currentMode === "cake") {
+        buildCakeGeometry(0.0, -0.02, 0.78);
+      } else if (currentMode === "santa") {
+        buildSantaGeometry(0.0, 0.02, 0.82);
+      }
+    }
+
+    function smoothstep(x) {
+      const c = Math.max(0, Math.min(1, (x + 1) / 2));
+      return c * c * (3 - 2 * c);
+    }
+
+    function reveal(order, t) {
+      const head = ((t - DRAW[0]) / (DRAW[1] - DRAW[0])) * O_MAX;
+      const soft = order >= 0.7 ? 0.09 : 0.05;
+      const alpha = smoothstep((head - order) / soft);
+      const isSparkEdge = Math.abs(head - order) < 0.04;
+      return { alpha, isSparkEdge };
+    }
+
+    function lights(t) {
+      const key = normalize3([-0.35, 0.85, 0.65]);
+      const rim = normalize3([Math.cos(t * 0.7), 0.4, Math.sin(t * 0.9)]);
+      return { key, rim };
+    }
+
+    const sparks = [];
+    const globeSnow = Array.from({ length: 22 }, () => ({
+      angle: Math.random() * Math.PI * 2,
+      rad: Math.random() * 0.82,
+      speedY: 0.25 + Math.random() * 0.4,
+      phase: Math.random() * 6.28
+    }));
+
+    function updateSparks(t, dt) {
+      if (sparks.length < 12 && Math.random() < 0.35) {
+        sparks.push({
+          gx: Math.floor(Math.random() * COLS),
+          gy: Math.floor(Math.random() * (ROWS - 4)) + 2,
+          age: 0,
+          maxAge: 0.7 + Math.random() * 1.0,
+          isHeart: Math.random() < 0.35
+        });
+      }
+      for (let i = sparks.length - 1; i >= 0; i--) {
+        sparks[i].age += dt;
+        if (sparks[i].age >= sparks[i].maxAge) sparks.splice(i, 1);
+      }
+    }
+
+    let typeTimer = null;
+    const typeEl = document.getElementById("typewriter");
+
+    function startTypewriter(text) {
+      if (typeTimer) clearInterval(typeTimer);
+      typeEl.textContent = "";
+      let idx = 0;
+      typeTimer = setInterval(() => {
+        if (idx < text.length) {
+          typeEl.textContent += text[idx];
+          idx++;
+        } else {
+          clearInterval(typeTimer);
+        }
+      }, 28);
+    }
+
+    function switchMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById(`tab-${mode}`).classList.add("active");
+      isBoxOpened = true;
+      document.getElementById("status-val").textContent = "BOX OPENED ✨";
+      simTime = 0;
+      rebuildScene();
+      startTypewriter(CONFIG.messages[mode]);
+    }
+
+    function resetBox() {
+      isBoxOpened = false;
+      currentMode = "split";
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById("tab-split").classList.add("active");
+      document.getElementById("status-val").textContent = "TAP BOX TO UNBOX 🎁";
+      simTime = 0;
+      buildBoxGeometry();
+      startTypewriter(CONFIG.messages.locked);
+    }
+
+    // Tap or Click on Canvas to Open Box!
+    canvas.addEventListener("click", (e) => {
+      if (!isBoxOpened) {
+        isBoxOpened = true;
+        document.getElementById("status-val").textContent = "BOX OPENED ✨";
+        simTime = 0;
+        rebuildScene();
+        startTypewriter(CONFIG.messages.split);
+      }
+    });
+
+    function selectGift(choice) {
+      if (!isBoxOpened) {
+        isBoxOpened = true;
+        document.getElementById("status-val").textContent = "BOX OPENED ✨";
+        simTime = 0;
+      }
+      if (choice === "cake" && currentMode !== "cake") switchMode("cake");
+      if (choice === "santa" && currentMode !== "santa") switchMode("santa");
+
+      let waText = "";
+      if (choice === "cake") {
+        waText = "Hey! 🍰💖 I opened your mystery box and I choose the Greggs Pink Tottenham Cake! Bring it over please 🥰";
+      } else if (choice === "santa") {
+        waText = "Hey! 🎅❄️ I opened your mystery box and I choose the cute Santa Snow Globe! Bring it over please 🥰";
+      } else {
+        waText = "Hey! 🍰🎅💖 I opened your mystery box and I want BOTH the Tottenham Cake AND the Santa Snow Globe! 🥰";
+      }
+
+      const encoded = encodeURIComponent(waText);
+      const waUrl = CONFIG.whatsappPhone ? `https://wa.me/${CONFIG.whatsappPhone}?text=${encoded}` : `https://wa.me/?text=${encoded}`;
+      setTimeout(() => { window.open(waUrl, "_blank"); }, 350);
+    }
+
+    const DENSITY_RAMP = " .,-/rvo08$&@";
+    let simTime = 0;
+    let lastFrameTime = performance.now();
+    const frameInterval = 1000 / CONFIG.targetFPS;
+
+    resizeCanvas();
+    buildBoxGeometry();
+    startTypewriter(CONFIG.messages.locked);
+
+    function renderFrame(now) {
+      requestAnimationFrame(renderFrame);
+
+      const elapsed = now - lastFrameTime;
+      if (elapsed < frameInterval) return;
+      lastFrameTime = now - (elapsed % frameInterval);
+
+      const dt = frameInterval / 1000;
+      simTime += dt;
+
+      ctx.fillStyle = "#050505";
+      ctx.fillRect(0, 0, COLS * cellW, ROWS * cellH);
+
+      const { key, rim } = lights(simTime);
+      const swayPhase = Math.sin(simTime * 1.35);
+      const swayDegrees = Math.abs(swayPhase * 9.8);
+
+      updateSparks(simTime, dt);
+      for (const s of sparks) {
+        const life = Math.sin((s.age / s.maxAge) * Math.PI);
+        ctx.fillStyle = s.isHeart ? `rgba(255, 117, 143, ${(life * 0.55).toFixed(2)})` : `rgba(200, 215, 235, ${(life * 0.42).toFixed(2)})`;
+        if (s.isHeart) {
+          if (s.gx >= 0 && s.gx < COLS && s.gy >= 0 && s.gy < ROWS) ctx.fillText("♥", s.gx * cellW, s.gy * cellH);
+        } else {
+          const drawC = (ch, x, y) => { if (x >= 0 && x < COLS && y >= 0 && y < ROWS) ctx.fillText(ch, x * cellW, y * cellH); };
+          drawC("+", s.gx, s.gy);
+          drawC("|", s.gx, s.gy - 1);
+          drawC("|", s.gx, s.gy + 1);
+          drawC("-", s.gx - 1, s.gy);
+          drawC("-", s.gx + 1, s.gy);
+        }
+      }
+
+      if (!isBoxOpened) {
+        // Render Mystery Box
+        for (const node of boxNodes) {
+          const drawX = node.gx;
+          const drawY = node.gy;
+          if (drawX < 0 || drawX >= COLS || drawY < 0 || drawY >= ROWS) continue;
+
+          let char = "@";
+          let color = "#ff4d6d";
+          if (node.part === "ribbon" || node.part === "bow") {
+            char = node.part === "bow" ? "♥" : "#";
+            color = "#ffd166";
+          } else if (node.part === "tag") {
+            char = ".";
+            color = "#ffffff";
+          } else {
+            const ramp = " .,-rvo08$&@";
+            const idx = Math.min(ramp.length - 1, Math.floor(Math.abs(node.x) * ramp.length));
+            char = ramp[idx];
+          }
+
+          ctx.fillStyle = color;
+          ctx.fillText(char, drawX * cellW, drawY * cellH);
+        }
+
+        // Tap prompt floating above box
+        if (Math.floor(simTime * 2) % 2 === 0) {
+          ctx.fillStyle = "#ff8fab";
+          ctx.fillText("[ TAP BOX TO UNBOX 🎁 ]", Math.floor(COLS * 0.23) * cellW, Math.floor(ROWS * 0.22) * cellH);
+        }
+
+      } else {
+        // Render Opened Gifts (Cake & Santa Globe)
+        let activeLetters = 0;
+        let revealedCount = 0;
+
+        for (const node of sceneNodes) {
+          const { alpha, isSparkEdge } = reveal(node.order, simTime);
+          if (alpha <= 0.05) continue;
+
+          revealedCount++;
+          activeLetters++;
+
+          const swayCols = Math.round(swayPhase * 1.5);
+          const drawX = node.gx + swayCols;
+          const drawY = node.gy;
+          if (drawX < 0 || drawX >= COLS || drawY < 0 || drawY >= ROWS) continue;
+
+          const n = node.normal;
+          const dotKey = Math.max(0, n[0] * key[0] + n[1] * key[1] + n[2] * key[2]);
+          const dotRim = Math.max(0, n[0] * rim[0] + n[1] * rim[1] + n[2] * rim[2]);
+          let lum = Math.min(1, 0.22 + 0.65 * dotKey + 0.30 * dotRim);
+
+          const rampIdx = Math.min(DENSITY_RAMP.length - 1, Math.max(2, Math.floor(lum * DENSITY_RAMP.length)));
+          let char = DENSITY_RAMP[rampIdx];
+          let color = "#ffffff";
+
+          if (isSparkEdge && simTime < DRAW[1] + 0.2) {
+            char = "*";
+            color = `rgba(255, 240, 245, ${alpha})`;
+          } else {
+            switch (node.part) {
+              case "cake_icing":
+                if (node.isCrumb) char = "$";
+                const pr = Math.min(255, Math.floor((215 + 40 * lum) * alpha));
+                const pg = Math.min(255, Math.floor((95 + 75 * lum) * alpha));
+                const pb = Math.min(255, Math.floor((145 + 75 * lum) * alpha));
+                color = `rgb(${pr}, ${pg}, ${pb})`;
+                break;
+              case "cake_icing_drip":
+                char = "~";
+                color = `rgba(255, 145, 185, ${alpha})`;
+                break;
+              case "cake_sponge_front":
+                if (node.isAirPocket) { char = "o"; lum *= 0.82; }
+                const sr = Math.min(255, Math.floor((195 + 58 * lum) * alpha));
+                const sg = Math.min(255, Math.floor((155 + 65 * lum) * alpha));
+                const sb = Math.min(255, Math.floor((65 + 45 * lum) * alpha));
+                color = `rgb(${sr}, ${sg}, ${sb})`;
+                break;
+              case "cake_sponge_side":
+                char = "/";
+                color = `rgb(${Math.floor(165 * alpha)}, ${Math.floor(120 * alpha)}, ${Math.floor(45 * alpha)})`;
+                break;
+              case "santa_base":
+              case "santa_suit":
+                const rr = Math.min(255, Math.floor((165 + 90 * lum) * alpha));
+                const rg = Math.floor((20 + 35 * lum) * alpha);
+                const rb = Math.floor((30 + 40 * lum) * alpha);
+                color = `rgb(${rr}, ${rg}, ${rb})`;
+                break;
+              case "santa_collar":
+              case "santa_beard":
+                char = node.edgeChar === "#" ? "#" : "@";
+                const wr = Math.min(255, Math.floor((200 + 55 * lum) * alpha));
+                color = `rgb(${wr}, ${wr}, ${Math.min(255, wr + 10)})`;
+                break;
+              case "santa_face":
+                char = "o";
+                color = `rgba(255, 205, 178, ${alpha})`;
+                break;
+              case "santa_belt":
+                char = "=";
+                color = `rgba(55, 60, 70, ${alpha})`;
+                break;
+              case "santa_buckle":
+                char = "$";
+                color = `rgba(255, 215, 70, ${alpha})`;
+                break;
+              case "santa_glass":
+                char = node.edgeChar;
+                color = `rgba(165, 225, 255, ${(0.55 * alpha).toFixed(2)})`;
+                break;
+            }
+          }
+
+          ctx.fillStyle = color;
+          ctx.fillText(char, drawX * cellW, drawY * cellH);
+        }
+
+        if (currentMode === "split" || currentMode === "santa") {
+          const gCenterX = currentMode === "split" ? 0.47 : 0.0;
+          const gCenterY = 0.02 + 0.15 * (currentMode === "split" ? 0.52 : 0.82);
+          const gRadius = 0.33 * (currentMode === "split" ? 0.52 : 0.82);
+
+          ctx.fillStyle = "rgba(235, 248, 255, 0.85)";
+          for (const f of globeSnow) {
+            const fallY = ((simTime * f.speedY + f.phase) % 1.8) - 0.9;
+            const swirlX = Math.sin(simTime * 2.2 + f.phase) * f.rad;
+            if (Math.hypot(swirlX, fallY) <= 0.88) {
+              const nx = gCenterX + swirlX * f.rad;
+              const ny = gCenterY - fallY * gRadius;
+              const sc = Math.floor((nx * 0.5 + 0.5) * COLS) + Math.round(swayPhase * 1.5);
+              const sr = Math.floor((1.0 - ny) * ROWS);
+              if (sc >= 0 && sc < COLS && sr >= 0 && sr < ROWS) {
+                ctx.fillText("*", sc * cellW, sr * cellH);
+              }
+            }
+          }
+        }
+
+        if (currentMode === "split" && simTime > 1.8) {
+          ctx.fillStyle = "#ff8fab";
+          ctx.fillText("[1] TOTTENHAM CAKE", Math.floor(COLS * 0.08) * cellW, (ROWS - 2) * cellH);
+          ctx.fillStyle = "#79c0ff";
+          ctx.fillText("[2] SANTA GLOBE", Math.floor(COLS * 0.58) * cellW, (ROWS - 2) * cellH);
+        }
+      }
+    }
+
+    requestAnimationFrame(renderFrame);
+  </script>
+</body>
+</html>
